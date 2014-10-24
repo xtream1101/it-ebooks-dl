@@ -1,4 +1,6 @@
 import os
+import datetime
+import threading
 import urllib.request
 import urllib.error
 from html.parser import HTMLParser
@@ -6,7 +8,8 @@ from html.parser import HTMLParser
 
 ########## Edit these
 dl_dir = 'X:\\test'
-dl_next = 2
+dl_next = 10
+simultaneous_downloads = 5
 save_count_file = 'current_count'
 
 ########## Do not edit this
@@ -45,7 +48,7 @@ class GetEbooks:
 
     def _save_curr_count(self, count):
         with open(save_count_file, 'w') as f:
-            f.write(str(count))
+            f.write(str(count+1))
 
     def _get_curr_count(self):
         if os.path.isfile(save_count_file):
@@ -73,32 +76,48 @@ class GetEbooks:
                 parser.book_data['num'] = i
                 self._books.append(parser.book_data)
             except urllib.error.HTTPError as err:
-                print("Error Code", err.code, "with link", url)
+                errors.append("Error Code "+ err.code+ " with link "+ url)
                 print("Up to date with books")
-                i = i-1
                 break
-        self._save_curr_count(i+1)
+            except:
+                errors.append("some error")
         self._dl_ebooks()
+
+    def _dl_worker(self, book):
+        if book['inLanguage'].lower() == 'english':
+            new_file = dl_dir+'\\'+book['publisher']+' - '+book['name']+' ('+book['datePublished']+').'+book['bookFormat'].lower()
+            if not os.path.isfile(new_file):
+                print("getting book: "+book['name'])
+                header_stuff = {'User-Agent': 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)',
+                                'Referer': book['url'],
+                                'Accept':"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
+                with urllib.request.urlopen(
+                        urllib.request.Request(book['dl_link'], headers=header_stuff)) as response, \
+                        open(new_file, 'wb') as out_file:
+                    data = response.read()
+                    out_file.write(data)
+            else:
+                errors.append('Book: '+book['name']+' is already dl\'ed')
+        else:
+            errors.append('Book: '+book['num']+' is not in English')
 
     def _dl_ebooks(self):
         for book in self._books:
-            if book['inLanguage'].lower() == 'english':
-                new_file = dl_dir+'\\'+book['publisher']+' - '+book['name']+' ('+book['datePublished']+').'+book['bookFormat'].lower()
-                if not os.path.isfile(new_file):
-                    print("getting book: "+book['name'])
-                    header_stuff = {'User-Agent': 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)',
-                                    'Referer': book['url'],
-                                    'Accept':"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
-                    with urllib.request.urlopen(
-                            urllib.request.Request(book['dl_link'], headers=header_stuff)) as response, \
-                            open(new_file, 'wb') as out_file:
-                        data = response.read()
-                        out_file.write(data)
-                else:
-                    print('Book: '+book['name']+' is already dl\'ed')
+            t = threading.Thread(target=self._dl_worker, args=(book,))
+            t.start()
+            if threading.active_count() <= simultaneous_downloads:
+                continue
             else:
-                print('Book: '+book['num']+' is not in English')
+                self._save_curr_count(book['num'])
+                t.join()
+        #wait until the last thread stops
+        t.join()
 
 
 if __name__ == '__main__':
+    errors = []
+    start_time = datetime.datetime.now().replace(microsecond=0)
     dl_ebooks = GetEbooks()
+    print("\n\nRun Time: " + str(datetime.datetime.now().replace(microsecond=0) - start_time))
+    for error in errors:
+        print(error)
