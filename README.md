@@ -14,7 +14,7 @@ Vars
 
 * dl_dir - Directory where the files will download to
 * dl_next - How many books to download this run
-* simultaneous_downloads - How many items you want to download at a time
+* num_threads - How many items you want to process at a time
 * save_count_file - File which stores the number of the last ebook you downloaded 
 
 Use

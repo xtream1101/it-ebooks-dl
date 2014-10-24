@@ -1,7 +1,7 @@
 import os
-import sys
 import datetime
 import threading
+import queue
 import urllib.request
 import urllib.error
 from html.parser import HTMLParser
@@ -10,7 +10,7 @@ from html.parser import HTMLParser
 ########## Edit these
 dl_dir = 'X:\\test'
 dl_next = 10
-simultaneous_downloads = 5
+num_threads = 5
 save_count_file = 'current_count'
 ########## STOP edit
 
@@ -45,8 +45,21 @@ class MyHTMLParser(HTMLParser):
 
 class GetEbooks:
     def __init__(self):
-        self._books = []
-        self._parse_links()
+        self._q = queue.Queue()
+        #create thread pool
+        for i in range(num_threads):
+            t = threading.Thread(target=self._parse_start)
+            t.daemon = True
+            t.start()
+        #fill queue
+        start = self._get_curr_count()
+        last_book_num = 0
+        for num in range(start, start+dl_next):
+            last_book_num = num
+            self._q.put(num)
+        #wait until all threads are complete
+        self._q.join()
+        self._save_curr_count(last_book_num)
 
     def _save_curr_count(self, count):
         with open(save_count_file, 'w') as f:
@@ -62,28 +75,30 @@ class GetEbooks:
             count = 1
         return count
 
-    def _parse_links(self):
-        start = self._get_curr_count()
-        for i in range(start, start+dl_next):
-            url = "http://it-ebooks.info/book/"+str(i)
-            try:
-                request = urllib.request.Request(url)
-                response = urllib.request.urlopen(request)
-                html = response.read().decode('utf-8')
-                parser = MyHTMLParser()
-                parser.clear()
-                parser.feed(html)
-                parser.book_data['url'] = url
-                parser.book_data['num'] = i
-                self._books.append(parser.book_data)
-                print("Parsed : ["+str(i)+"] "+parser.book_data['name'])
-            except urllib.error.HTTPError as err:
-                errors.append("Error Code "+err.code+" with link "+url)
-                print("Up to date with books")
-                break
-            except:
-                errors.append("some error")
-        self._dl_ebooks()
+    def _parse_start(self):
+        while True:
+            num = self._q.get()
+            self._parse_worker(num)
+            self._q.task_done()
+
+    def _parse_worker(self, book_num):
+        url = "http://it-ebooks.info/book/"+str(book_num)
+        try:
+            request = urllib.request.Request(url)
+            response = urllib.request.urlopen(request)
+            html = response.read().decode('utf-8')
+            parser = MyHTMLParser()
+            parser.clear()
+            parser.feed(html)
+            parser.book_data['url'] = url
+            parser.book_data['num'] = book_num
+            print("Parsed : ["+str(book_num)+"] "+parser.book_data['name'])
+            self._dl_worker(parser.book_data)
+        except urllib.error.HTTPError as err:
+            errors.append("Error Code "+err.code+" with link "+url)
+            print("Up to date with books")
+        except:
+            errors.append("some error")
 
     def _dl_worker(self, book):
         if book['inLanguage'].lower() == 'english':
@@ -95,7 +110,7 @@ class GetEbooks:
             finally:
                 new_file = file_dir+book['publisher']+' - '+book['name']+' ('+book['datePublished']+').'+book['bookFormat'].lower()
                 if not os.path.isfile(new_file):
-                    print("getting book: "+book['name'])
+                    print("DL'ing: ["+str(book['num'])+"] "+book['name'])
                     header_stuff = {'User-Agent': 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)',
                                     'Referer': book['url'],
                                     'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
@@ -105,23 +120,10 @@ class GetEbooks:
                         data = response.read()
                         out_file.write(data)
                 else:
-                    errors.append('Book: '+book['name']+' is already dl\'ed')
+                    errors.append("Book: ["+str(book['num'])+"] "+book['name']+" is already dl\'ed")
         else:
-            errors.append('Book: '+book['num']+' is not in English')
+            errors.append("Book: ["+str(book['num'])+"] "+book['name']+" is not in english")
 
-    def _dl_ebooks(self):
-        t = {}
-        num = 0
-        for book in self._books:
-            num = book['num']
-            t[num] = threading.Thread(target=self._dl_worker, args=(book,))
-            t[num].start()
-            if threading.active_count() <= simultaneous_downloads:
-                continue
-            else:
-                self._save_curr_count(num)
-                t[num].join()
-        #wait until the last thread stops
 
 
 if __name__ == '__main__':
