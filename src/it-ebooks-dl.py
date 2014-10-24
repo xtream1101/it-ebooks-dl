@@ -8,9 +8,9 @@ from html.parser import HTMLParser
 
 
 ########## Edit these
-dl_dir = 'X:\\test'
-dl_next = 10
-num_threads = 5
+dl_dir = 'X:\downloads\ebooks\it-ebooks'
+dl_next = 100
+num_threads = 10
 save_count_file = 'current_count'
 ########## STOP edit
 
@@ -116,12 +116,16 @@ class GetEbooks:
         After Parse download the file
         """
         if book['inLanguage'].lower() == 'english':
+            book['publisher']= self._sanitize(book['publisher'])
+            book['name'] = self._sanitize(book['name'])
             file_dir = dl_dir+'\\'+book['publisher']+'\\'
             try:
                 os.makedirs(file_dir)
             except:
                 pass
             finally:
+                if book['bookFormat'] == None:
+                    book['bookFormat'] = 'pdf'
                 new_file = file_dir+book['publisher']+' - '+book['name']+' ('+book['datePublished']+').'+book['bookFormat'].lower()
                 if not os.path.isfile(new_file):
                     print("DL'ing: ["+str(book['num'])+"] "+book['name'])
@@ -140,6 +144,8 @@ class GetEbooks:
             print("Not English: ["+str(book['num'])+"] "+book['name'])
             errors.append("Book: ["+str(book['num'])+"] "+book['name']+" is not in english")
 
+    def _sanitize(self, string):
+        return string.replace(':', '-')
 
 if __name__ == '__main__':
     errors = []
