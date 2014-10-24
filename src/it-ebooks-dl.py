@@ -120,8 +120,10 @@ class GetEbooks:
                         data = response.read()
                         out_file.write(data)
                 else:
+                    print("Have: ["+str(book['num'])+"] "+book['name'])
                     errors.append("Book: ["+str(book['num'])+"] "+book['name']+" is already dl\'ed")
         else:
+            print("Not English: ["+str(book['num'])+"] "+book['name'])
             errors.append("Book: ["+str(book['num'])+"] "+book['name']+" is not in english")
 
 
