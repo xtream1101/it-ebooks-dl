@@ -62,10 +62,16 @@ class GetEbooks:
         self._save_curr_count(last_book_num)
 
     def _save_curr_count(self, count):
+        """
+        Save where we left off
+        """
         with open(save_count_file, 'w') as f:
             f.write(str(count+1))
 
     def _get_curr_count(self):
+        """
+        If we have a current count file, read in its value
+        """
         if os.path.isfile(save_count_file):
             with open(save_count_file, 'r') as f:
                 count = int(f.read())
@@ -82,25 +88,33 @@ class GetEbooks:
             self._q.task_done()
 
     def _parse_worker(self, book_num):
+        """
+        Parse the page for the book information
+        """
         url = "http://it-ebooks.info/book/"+str(book_num)
         try:
             request = urllib.request.Request(url)
             response = urllib.request.urlopen(request)
             html = response.read().decode('utf-8')
+            #parse the page
             parser = MyHTMLParser()
             parser.clear()
             parser.feed(html)
             parser.book_data['url'] = url
             parser.book_data['num'] = book_num
             print("Parsed : ["+str(book_num)+"] "+parser.book_data['name'])
+            #download the ebook
             self._dl_worker(parser.book_data)
         except urllib.error.HTTPError as err:
             errors.append("Error Code "+err.code+" with link "+url)
             print("Up to date with books")
         except:
-            errors.append("some error")
+            pass
 
     def _dl_worker(self, book):
+        """
+        After Parse download the file
+        """
         if book['inLanguage'].lower() == 'english':
             file_dir = dl_dir+'\\'+book['publisher']+'\\'
             try:
@@ -127,11 +141,10 @@ class GetEbooks:
             errors.append("Book: ["+str(book['num'])+"] "+book['name']+" is not in english")
 
 
-
 if __name__ == '__main__':
     errors = []
     start_time = datetime.datetime.now().replace(microsecond=0)
     dl_ebooks = GetEbooks()
-    print("\n\nRun Time: " + str(datetime.datetime.now().replace(microsecond=0) - start_time))
+    print("\n\nElapsed Time: " + str(datetime.datetime.now().replace(microsecond=0) - start_time))
     for error in errors:
         print(error)
