@@ -179,8 +179,7 @@ class DownloadEbooks:
 
                 if dl_file:
                     header_stuff = {'User-Agent': 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)',
-                                    'Referer': book['url'],
-                                    'Accept': "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
+                                    'Referer': book['url']}
                     dl_success = False
                     while not dl_success:
                         with urllib.request.urlopen(
