@@ -73,7 +73,7 @@ class CreateJSON:
             with open(self._book_list_file) as data_file:
                 data = json.load(data_file)
         except:
-            print("load err")
+            pass
         else:
             self._saved_list = data
 
@@ -95,7 +95,7 @@ class CreateJSON:
                 response = urllib.request.urlopen(request)
                 html = response.read().decode('utf-8')
             except:
-                errors.append("Error: "+str(book_num))
+                errors.append("Error: Book #"+str(book_num))
             else:
                 # Catch 404 page
                 if html.find('Page Not Found') != -1:
@@ -218,7 +218,7 @@ def elapsed_time():
 if __name__ == '__main__':
     ########## Edit these
     g_dl_dir = 'X:/downloads/ebooks/it-ebooks'
-    g_json_save = './it-ebooks.json'
+    g_json_save = g_dl_dir+'/it-ebooks.json'
     g_num_parse_threads = 10
     g_num_dl_threads = 5
     ########## STOP edit
