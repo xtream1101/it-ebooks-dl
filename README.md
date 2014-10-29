@@ -1,24 +1,28 @@
 it-ebooks-dl
 ============
 
-Downloads all ebooks from it-ebooks.info
+Downloads all e-books from it-ebooks.info
 
 
-Requires 
+Requires
 --------
 
 * Python 3.x
 
+
 Vars
 ----
+ 
+  * `g_dl_dir` - Directory to download e-books to (must exist)
+  * `g_json_save` - File to save the parsed json data to
+  * `g_num_parse_threads` - Number of threads for the parser to use
+  * `g_num_dl_threads` - Number of threads for the downloader to use
 
-* dl_dir - Directory where the files will download to
-* dl_next - How many books to download this run
-* num_threads - How many items you want to process at a time
-* save_count_file - File which stores the number of the last ebook you downloaded 
 
 Use
 ---
 
-1. Change the vars as needed
-2. Run in the command line by just calling this .py script with no args. Each time you do it will get the next set of books
+1. Change the vars as needed (bottom of script)
+2. Run in the command line by just calling this .py script with no args. 
+    * Each time you do, it will parse any books you do not have in your json file and add them to it.
+    * It will then download any missing e-books 
