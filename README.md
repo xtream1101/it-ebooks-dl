@@ -7,7 +7,7 @@ Downloads all e-books from it-ebooks.info
 Requires
 --------
 
-* Python 3.x
+* Python 3.4
 
 
 Vars
