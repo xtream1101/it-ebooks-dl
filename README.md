@@ -1,3 +1,6 @@
+# Depreciated, use project [web-scraper](https://github.com/xtream1101/web-scraper)
+
+
 it-ebooks-dl
 ============
 
