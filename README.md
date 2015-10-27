@@ -1,4 +1,4 @@
-# Depreciated, use project [web-scraper](https://github.com/xtream1101/web-scraper)
+# Depreciated, use project [scrape-itebooks](https://github.com/xtream1101/scrape-itebooks)
 
 
 it-ebooks-dl
